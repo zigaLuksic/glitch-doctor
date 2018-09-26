@@ -48,20 +48,10 @@ class Metamodel():
         """ Updates the history with a single evaluation. """
         return
 
-    def _update(self, is_relevant):
-        """ Update all components if needed. """
-        self.step_index += 1
-        self._update_counter += 1
-
-        if self._update_counter > self._update_interval:
-            self.surrogate.relearn(self.history)
-            self.relevator.relearn(self.history)
-            self._update_counter = 0
-
-        return
-
     def evaluate(self, params):
         """ Evaluate the Metamodel at the given point. """
+        self.step_index += 1
+
         # Determine relevance.
         relevance = self.relevator.evaluate(params)
         is_relevant = self.relevator.is_relevant(relevance)
@@ -74,7 +64,6 @@ class Metamodel():
 
         # Update history and components.
         self._update_history(params, relevance, is_relevant, prediction)
-        self._update(is_relevant)
 
         # Return result.
         return prediction
