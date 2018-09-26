@@ -1,22 +1,21 @@
 import numpy as np
 
 
-class Relevator():
+class Model():
     """
-    Predicts the relevance of points using machine learning methods.
+    The true model of the function.
 
     All methods and attributes that start with '_' should be treated as 
     private.
     """
 
     def __init__(self, metamodel, kwargs):
+        self._dimension = 10 #DUMMY
         return
 
-    def _update(self):
-        return
+    def get_dimension(self):
+        """ Safe access for outside functions. """
+        return self._dimension
 
     def evaluate(self, coords):
         return 0
-
-    def is_relevant(self, relevance):
-        return False

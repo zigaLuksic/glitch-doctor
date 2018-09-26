@@ -10,7 +10,7 @@ class Surrogate():
     private.
     """
 
-    def __init__(self):
+    def __init__(self, metamodel, kwargs):
 
         self._predictor = None
         return
@@ -18,10 +18,10 @@ class Surrogate():
     def _update(self):
         return
     
-    def _prepare_data(self, params):
-        return params
+    def _prepare_data(self, coords):
+        return coords
 
-    def evaluate(self, params):
-        data = self._prepare_data(params)
+    def evaluate(self, coords):
+        data = self._prepare_data(coords)
         prediction = self._predictor.predict(data)
         return prediction
