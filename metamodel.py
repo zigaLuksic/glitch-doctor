@@ -22,6 +22,7 @@ class Metamodel():
 
         # Public attributes
         self.step_index = 0
+        self.model_evaluations = 0
 
         self.model = Model(self, model_kwargs)
         self.history = History(self, history_kwargs)
@@ -39,12 +40,13 @@ class Metamodel():
 
         # Decide which prediction to use.
         if is_relevant:
-            prediction = self.surrogate.evaluate(coords)
-        else:
             prediction = self.model.evaluate(coords)
+            self.model_evaluations += 1
+        else:
+            prediction = self.surrogate.evaluate(coords)
 
         # Update history and components.
-        self.history.update(coords, relevance, is_relevant, prediction)
+        self.history.update(coords, prediction, relevance, is_relevant)
 
         # Update index and return result.
         self.step_index += 1

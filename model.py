@@ -10,7 +10,7 @@ class Model():
     """
 
     def __init__(self, metamodel, kwargs):
-        self._dimension = 10 #DUMMY
+        self._dimension = 3  # DUMMY
         return
 
     def get_dimension(self):
@@ -18,4 +18,4 @@ class Model():
         return self._dimension
 
     def evaluate(self, coords):
-        return 0
+        return coords[0] ** 2

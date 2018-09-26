@@ -1,5 +1,5 @@
 import numpy as np
-
+from sklearn import ensemble
 
 class Relevator():
     """
@@ -10,6 +10,7 @@ class Relevator():
     """
 
     def __init__(self, metamodel, kwargs):
+        self.metamodel = metamodel
         return
 
     def _update(self):
@@ -19,4 +20,4 @@ class Relevator():
         return 0
 
     def is_relevant(self, relevance):
-        return False
+        return np.random.rand(1) < 0.5
