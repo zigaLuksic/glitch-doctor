@@ -1,23 +1,151 @@
 import numpy as np
+import sys
 from sklearn import ensemble
+
 
 class Relevator():
     """
     Predicts the relevance of points using machine learning methods.
 
-    All methods and attributes that start with '_' should be treated as 
+    All methods and attributes that start with '_' should be treated as
     private.
     """
 
     def __init__(self, metamodel, kwargs):
         self.metamodel = metamodel
+        self.rebuild_interval = kwargs.get("rebuild_interval", 100)
+
+        self._predictor = ensemble.RandomForestRegressor()
+        self._relevance_function = lambda x: 1
+        threshold_kwargs = kwargs.get("threshold_kwargs", {})
+        self._threshold = Dynamic_Threshold(metamodel, threshold_kwargs)
+
+        self._built = False
+        # Used to keep track of when to rebuild the surrogate.
+        self._last_rebuild = 0
         return
 
     def _update(self):
+        """ Relearns the predictor if needed and adjusts the relevance
+        function. """
+        num_new_evals = (self.metamodel.model_evaluations - self._last_rebuild)
+        if num_new_evals >= self.rebuild_interval:
+            self._built = True
+            self._last_rebuild = self.metamodel.model_evaluations
+
+            # Rebuild relevance function and make it usable on arrays.
+            self._relevance_function = self._construct_relevance_function()
+            rel_fun = np.vectorize(self._relevance_function)
+
+            data = self.metamodel.history.get_model_evaluations()
+            relevance_values = rel_fun(data[:, -1])
+            self._predictor.fit(data[:, :-1], relevance_values)
         return
 
+    def _construct_relevance_function(self):
+        data = self.metamodel.history.get_model_evaluations()
+        values = data[:, -1]
+        v_min, v_avg = np.amin(values), np.mean(values)
+        # Safety, so we don't devide by 0
+        v_diff = max(abs(v_avg - v_min), sys.float_info.min)
+
+        def relevance_fun(v):
+            if v < v_min:
+                return 1
+            else:
+                return 1 / (1 + (v - v_min)/v_diff)
+
+        return relevance_fun
+
+    def _prepare_data(self, coords):
+        """ Transforms the data into the correct shape for the predictor. """
+        return np.array([coords])
+
+    def set_random_seed(self, seed):
+        """ This should set all used random number generator seeds."""
+        np.random.seed(seed)
+        self._threshold.set_random_seed(seed)
+        return
+
+    def is_built(self):
+        return self._built
+
     def evaluate(self, coords):
-        return 0
+        self._update()
+        data = self._prepare_data(coords)
+
+        if self._built:
+            prediction = self._predictor.predict(data)
+        else:
+            prediction = 1
+        return prediction
 
     def is_relevant(self, relevance):
-        return np.random.rand(1) < 0.5
+        """ Decides wheter or not the relevance renders the point relevant. """
+        is_relevant = self._threshold.value <= relevance
+        self._threshold.update()
+        return is_relevant
+
+
+class Dynamic_Threshold():
+    """
+    Implements a simple dynamic threshold that tries to locally adjust the
+    usage rate of the surrogate to a certain interval.
+    """
+
+    def __init__(self, metamodel, kwargs):
+        self.metamodel = metamodel
+
+        self.desired_rate = kwargs.get("desired_surr_rate", 0.7)
+        self.acceptable_offset = kwargs.get("acceptable_offset", 0.05)
+
+        self.value = kwargs.get("initial", 0.5)
+        self.step = kwargs.get("step", 0.001)
+        self.big_step_mult = kwargs.get("big_step_mult", 10)
+
+        self._update_interval = kwargs.get("update_interval", 10)
+        self._update_index = 0
+
+        return
+
+    def update(self):
+        """
+        Adjusts the local surrogate usage rate. The current implementation uses
+        the history for information and is thus always at least a step late,
+        however that should not matter.
+        """
+        self._update_index = (self._update_index + 1) % self._update_interval
+        waiting_to_update = self._update_index % self._update_interval > 0
+        surrogate_built = self.metamodel.surrogate.is_built()
+
+        if waiting_to_update or not surrogate_built:
+            return
+
+        surr_rate = 1 - self.metamodel.history.get_model_usage_rate()
+        up_bound = self.desired_rate + self.acceptable_offset
+        low_bound = self.desired_rate + self.acceptable_offset
+
+        if low_bound <= surr_rate <= up_bound:
+            # Usage rate is acceptable.
+            return
+
+        T = self.value
+        # Adjust step size if close to border of [0, 1]
+        step_size = min(self.step, T/2, (1 - T)/2)
+
+        # Check if critical (Needs adjustement fast)
+        if surr_rate > 1 - (1 - up_bound)/2 or surr_rate < low_bound/2:
+            step_size *= self.big_step_mult
+
+        # Adjust
+        if surr_rate > up_bound:
+            self.value = max(0, min(1, self.value - step_size))
+        elif surr_rate < low_bound:
+            self.value = max(0, min(1, self.value + step_size))
+
+        return
+
+    def set_random_seed(self, seed):
+        """ This should set all used random number generator seeds."""
+        np.random.seed(seed)
+        return

@@ -1,17 +1,28 @@
 import numpy as np
 from metamodel import Metamodel
 
-history_kwargs = {"size": 100}
-relevator_kwargs = {}
-surrogate_kwargs = {"rebuild_interval": 100}
+metamodel_kwargs = {"random_seed": 28537}
 model_kwargs = {}
+surrogate_kwargs = {"rebuild_interval": 100}
+threshold_kwargs = {"desired_surr_rate": 0.7,
+                    "acceptable_offset": 0.05,
+                    "initial": 0.5,
+                    "step": 0.001,
+                    "big_step_mult": 10,
+                    "update_interval": 10}
+relevator_kwargs = {"rebuild_interval": 100,
+                    "threshold_kwargs": threshold_kwargs}
+history_kwargs = {"size": 1000,
+                  "use_size": 100}
 
-mm = Metamodel(model_kwargs, history_kwargs,
-               relevator_kwargs, surrogate_kwargs)
+mm = Metamodel(metamodel_kwargs, model_kwargs, surrogate_kwargs,
+               relevator_kwargs, history_kwargs)
 
 
-for _ in range(1000):
+for _ in range(10000):
     coords = 10 * np.random.rand(3)
     mm.evaluate(coords)
 
-print(mm.history.get_whole_history())
+print(mm.history._use_data)
+print(mm.history.get_model_usage_rate())
+print(mm.relevator._threshold.value)

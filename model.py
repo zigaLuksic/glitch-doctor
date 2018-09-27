@@ -5,12 +5,18 @@ class Model():
     """
     The true model of the function.
 
-    All methods and attributes that start with '_' should be treated as 
+    All methods and attributes that start with '_' should be treated as
     private.
     """
 
     def __init__(self, metamodel, kwargs):
-        self._dimension = 3  # DUMMY
+        """ THIS IS A DUMMY MODEL. """
+        self._dimension = 3
+        return
+
+    def set_random_seed(self, seed):
+        """ This should set all used random number generator seeds."""
+        np.random.seed(seed)
         return
 
     def get_dimension(self):
@@ -18,4 +24,5 @@ class Model():
         return self._dimension
 
     def evaluate(self, coords):
+        """ THIS IS A DUMMY MODEL. """
         return coords[0] ** 2
