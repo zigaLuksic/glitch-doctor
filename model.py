@@ -11,11 +11,11 @@ class Model():
 
     def __init__(self, metamodel, kwargs):
         """ THIS IS A DUMMY MODEL. """
-        self._dimension = 3
+        self._dimension = 10
         return
 
     def set_random_seed(self, seed):
-        """ This should set all used random number generator seeds."""
+        """ This should set all used random number generator seeds. """
         np.random.seed(seed)
         return
 
@@ -25,4 +25,4 @@ class Model():
 
     def evaluate(self, coords):
         """ THIS IS A DUMMY MODEL. """
-        return coords[0] ** 2
+        return coords[0] ** 2 + coords[1] ** 3 - 5 * coords[2]

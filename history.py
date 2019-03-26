@@ -15,6 +15,9 @@ class History():
     Managed by the '_write_index' so only use safe access to get correctly
     ordered entries.
 
+    It also keeps model usage rate as a separate history (with size of
+    `use_size`) for the dynamic relevator threshold for faster recalculation.
+
     All methods and attributes that start with '_' should be treated as
     private.
     """
@@ -23,12 +26,12 @@ class History():
         self.metamodel = metamodel
 
         self.size = kwargs.get("size", 1000)
-        self.use_size = kwargs.get("size", 100)
+        self.use_size = kwargs.get("use_size", 100)
 
         self._dimension = metamodel.model.get_dimension() + 1
         # Objects for keeping data
         self._data = np.zeros((self.size, self._dimension))
-        self._use_data = np.zeros(self.size)
+        self._use_data = np.zeros(self.use_size)
         # Indices of current position to write
         self._write_index = 0
         self._use_write_index = 0
@@ -59,7 +62,7 @@ class History():
                 self._is_full = True
         return
 
-    def _order_data(self, data, write_index):
+    def _ordered_data(self, data, write_index):
         """
         Due to reusing old entries, our data is shifted and needs to be
         correctly ordered before use.
@@ -74,7 +77,7 @@ class History():
         """
         if self._is_full:
             # Correct the order of data and return.
-            return self._order_data(self._data, self._write_index)
+            return self._ordered_data(self._data, self._write_index)
         else:
             # Select non-empty entries. No ordering needed.
             return self._data[:self._write_index, :]

@@ -26,8 +26,9 @@ class Relevator():
         return
 
     def _update(self):
-        """ Relearns the predictor if needed and adjusts the relevance
-        function. """
+        """
+        Relearns the predictor if needed and adjusts the relevance function.
+        """
         num_new_evals = (self.metamodel.model_evaluations - self._last_rebuild)
         if num_new_evals >= self.rebuild_interval:
             self._built = True
@@ -62,7 +63,7 @@ class Relevator():
         return np.array([coords])
 
     def set_random_seed(self, seed):
-        """ This should set all used random number generator seeds."""
+        """ This should set all used random number generator seeds. """
         np.random.seed(seed)
         self._threshold.set_random_seed(seed)
         return
@@ -134,8 +135,9 @@ class Dynamic_Threshold():
         step_size = min(self.step, T/2, (1 - T)/2)
 
         # Check if critical (Needs adjustement fast)
+        # !!! This is all very hacky and needs to be improved !!!
         if surr_rate > 1 - (1 - up_bound)/2 or surr_rate < low_bound/2:
-            step_size *= self.big_step_mult
+            step_size = min(self.step * self.big_step_mult, T/1.5, (1 - T)/1.5)
 
         # Adjust
         if surr_rate > up_bound:
@@ -146,6 +148,6 @@ class Dynamic_Threshold():
         return
 
     def set_random_seed(self, seed):
-        """ This should set all used random number generator seeds."""
+        """ This should set all used random number generator seeds. """
         np.random.seed(seed)
         return

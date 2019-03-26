@@ -20,7 +20,7 @@ mm = Metamodel(metamodel_kwargs, model_kwargs, surrogate_kwargs,
 
 
 for _ in range(10000):
-    coords = 10 * np.random.rand(3)
+    coords = 10 * np.random.rand(10)
     mm.evaluate(coords)
 
 print(mm.history._use_data)
