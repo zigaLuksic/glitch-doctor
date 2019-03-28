@@ -8,7 +8,8 @@ threshold_kwargs = {"desired_surr_rate": 0.7,
                     "acceptable_offset": 0.05,
                     "initial": 0.5,
                     "step": 0.001,
-                    "big_step_mult": 10,
+                    "alpha": 42,
+                    "beta": 10,
                     "update_interval": 10}
 relevator_kwargs = {"rebuild_interval": 100,
                     "threshold_kwargs": threshold_kwargs}

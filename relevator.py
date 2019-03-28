@@ -18,7 +18,7 @@ class Relevator():
         self._predictor = ensemble.RandomForestRegressor()
         self._relevance_function = lambda x: 1
         threshold_kwargs = kwargs.get("threshold_kwargs", {})
-        self._threshold = Dynamic_Threshold(metamodel, threshold_kwargs)
+        self._threshold = AB_Dynamic_Threshold(metamodel, threshold_kwargs)
 
         self._built = False
         # Used to keep track of when to rebuild the surrogate.
@@ -144,6 +144,67 @@ class Dynamic_Threshold():
             self.value = max(0, min(1, self.value - step_size))
         elif surr_rate < low_bound:
             self.value = max(0, min(1, self.value + step_size))
+
+        return
+
+    def set_random_seed(self, seed):
+        """ This should set all used random number generator seeds. """
+        np.random.seed(seed)
+        return
+
+
+class AB_Dynamic_Threshold():
+    """
+    Implements a simple dynamic threshold that tries to locally adjust the
+    usage rate of the surrogate to a certain interval.
+    """
+
+    def __init__(self, metamodel, kwargs):
+        self.metamodel = metamodel
+
+        self.desired_rate = kwargs.get("desired_surr_rate", 0.7)
+        self.acceptable_offset = kwargs.get("acceptable_offset", 0.05)
+
+        self.value = kwargs.get("initial", 0.5)
+        self.step = kwargs.get("step", 0.001)
+        self.alpha = kwargs.get("alpha", 42)
+        self.beta = kwargs.get("beta", 10)
+
+        self._update_interval = kwargs.get("update_interval", 10)
+        self._update_index = 0
+
+        return
+
+    def update(self):
+        """
+        Adjusts the local surrogate usage rate. The current implementation uses
+        the history for information and is thus always at least a step late,
+        however that should not matter.
+        """
+        self._update_index = (self._update_index + 1) % self._update_interval
+        waiting_to_update = self._update_index % self._update_interval > 0
+        surrogate_built = self.metamodel.surrogate.is_built()
+
+        if waiting_to_update or not surrogate_built:
+            return
+
+        surr_rate = 1 - self.metamodel.history.get_model_usage_rate()
+        surr_rate_err = abs(self.desired_rate - surr_rate)
+
+        if surr_rate_err <= self.acceptable_offset:
+            # Usage rate is acceptable.
+            return
+
+        T = self.value
+        edge_adjustment = 1 - ((2*T - 1) ** self.alpha)
+        err_adjustment = min(self.beta, 1 / ((1 - surr_rate_err) ** self.beta))
+        step_size = self.step * edge_adjustment * err_adjustment
+
+        # Adjust
+        if surr_rate > self.desired_rate:
+            self.value = max(T/self.beta, min(1, T - step_size))
+        elif surr_rate < self.desired_rate:
+            self.value = max(0, min(1-((1-T)/self.beta), T + step_size))
 
         return
 
