@@ -6,11 +6,9 @@ model_kwargs = {}
 surrogate_kwargs = {"rebuild_interval": 100}
 threshold_kwargs = {"desired_surr_rate": 0.7,
                     "acceptable_offset": 0.05,
-                    "initial": 0.5,
                     "step": 0.001,
                     "alpha": 42,
-                    "beta": 10,
-                    "update_interval": 10}
+                    "beta": 10}
 relevator_kwargs = {"rebuild_interval": 100,
                     "threshold_kwargs": threshold_kwargs}
 history_kwargs = {"size": 1000,

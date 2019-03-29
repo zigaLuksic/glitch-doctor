@@ -38,12 +38,14 @@ class Relevator():
             self._relevance_function = self._construct_relevance_function()
             rel_fun = np.vectorize(self._relevance_function)
 
+            # Learn relevance prediction model
             data = self.metamodel.history.get_model_evaluations()
             relevance_values = rel_fun(data[:, -1])
             self._predictor.fit(data[:, :-1], relevance_values)
         return
 
     def _construct_relevance_function(self):
+        """ Builds the relevance function according to current history. """
         data = self.metamodel.history.get_model_evaluations()
         values = data[:, -1]
         v_min, v_avg = np.amin(values), np.mean(values)
@@ -72,6 +74,7 @@ class Relevator():
         return self._built
 
     def evaluate(self, coords):
+        """ Predict relevance of given point. """
         self._update()
         data = self._prepare_data(coords)
 
@@ -104,9 +107,6 @@ class Dynamic_Threshold():
         self.step = kwargs.get("step", 0.001)
         self.big_step_mult = kwargs.get("big_step_mult", 10)
 
-        self._update_interval = kwargs.get("update_interval", 10)
-        self._update_index = 0
-
         return
 
     def update(self):
@@ -115,11 +115,8 @@ class Dynamic_Threshold():
         the history for information and is thus always at least a step late,
         however that should not matter.
         """
-        self._update_index = (self._update_index + 1) % self._update_interval
-        waiting_to_update = self._update_index % self._update_interval > 0
-        surrogate_built = self.metamodel.surrogate.is_built()
-
-        if waiting_to_update or not surrogate_built:
+        if not self.metamodel.surrogate.is_built():
+            # Do not adjust until we have a surrogate
             return
 
         surr_rate = 1 - self.metamodel.history.get_model_usage_rate()
@@ -170,9 +167,6 @@ class AB_Dynamic_Threshold():
         self.alpha = kwargs.get("alpha", 42)
         self.beta = kwargs.get("beta", 10)
 
-        self._update_interval = kwargs.get("update_interval", 10)
-        self._update_index = 0
-
         return
 
     def update(self):
@@ -181,11 +175,8 @@ class AB_Dynamic_Threshold():
         the history for information and is thus always at least a step late,
         however that should not matter.
         """
-        self._update_index = (self._update_index + 1) % self._update_interval
-        waiting_to_update = self._update_index % self._update_interval > 0
-        surrogate_built = self.metamodel.surrogate.is_built()
-
-        if waiting_to_update or not surrogate_built:
+        if not self.metamodel.surrogate.is_built():
+            # Do not adjust until we have a surrogate
             return
 
         surr_rate = 1 - self.metamodel.history.get_model_usage_rate()
