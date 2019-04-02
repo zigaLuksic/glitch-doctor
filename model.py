@@ -9,9 +9,9 @@ class Model():
     private.
     """
 
-    def __init__(self, metamodel, kwargs):
-        """ THIS IS A DUMMY MODEL. """
-        self._dimension = 10
+    def __init__(self, kwargs):
+        self._dimension = kwargs.get("dimension", 1)
+        self._function = kwargs.get("function", lambda x: 0)
         return
 
     def set_random_seed(self, seed):
@@ -24,5 +24,4 @@ class Model():
         return self._dimension
 
     def evaluate(self, coords):
-        """ THIS IS A DUMMY MODEL. """
-        return coords[0] ** 2 + coords[1] ** 3 - 5 * coords[2]
+        return self._function(coords)

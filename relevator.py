@@ -15,10 +15,20 @@ class Relevator():
         self.metamodel = metamodel
         self.rebuild_interval = kwargs.get("rebuild_interval", 100)
 
-        self._predictor = ensemble.RandomForestRegressor()
+        self._predictor = kwargs.get("predictor",
+                                     ensemble.RandomForestRegressor())
+
         self._relevance_function = lambda x: 1
+
+        # Set the desired dynamic threshold
         threshold_kwargs = kwargs.get("threshold_kwargs", {})
-        self._threshold = AB_Dynamic_Threshold(metamodel, threshold_kwargs)
+        threshold_type = threshold_kwargs.get("type", "alpha-beta")
+        if threshold_type == "alpha-beta":
+            self._threshold = AB_Dynamic_Threshold(metamodel, threshold_kwargs)
+        elif threshold_type == "old":
+            self._threshold = Dynamic_Threshold(metamodel, threshold_kwargs)
+        else:
+            self._threshold = AB_Dynamic_Threshold(metamodel, threshold_kwargs)
 
         self._built = False
         # Used to keep track of when to rebuild the surrogate.
@@ -104,7 +114,7 @@ class Dynamic_Threshold():
         self.acceptable_offset = kwargs.get("acceptable_offset", 0.05)
 
         self.value = kwargs.get("initial", 0.5)
-        self.step = kwargs.get("step", 0.001)
+        self.step = kwargs.get("step", 0.0001)
         self.big_step_mult = kwargs.get("big_step_mult", 10)
 
         return
@@ -163,7 +173,7 @@ class AB_Dynamic_Threshold():
         self.acceptable_offset = kwargs.get("acceptable_offset", 0.05)
 
         self.value = kwargs.get("initial", 0.5)
-        self.step = kwargs.get("step", 0.001)
+        self.step = kwargs.get("step", 0.0001)
         self.alpha = kwargs.get("alpha", 42)
         self.beta = kwargs.get("beta", 10)
 
@@ -190,12 +200,11 @@ class AB_Dynamic_Threshold():
         edge_adjustment = 1 - ((2*T - 1) ** self.alpha)
         err_adjustment = min(self.beta, 1 / ((1 - surr_rate_err) ** self.beta))
         step_size = self.step * edge_adjustment * err_adjustment
-
         # Adjust
         if surr_rate > self.desired_rate:
-            self.value = max(T/self.beta, min(1, T - step_size))
+            self.value = max(T/self.beta, T - step_size)
         elif surr_rate < self.desired_rate:
-            self.value = max(0, min(1-((1-T)/self.beta), T + step_size))
+            self.value = min(1 - ((1-T)/self.beta), T + step_size)
 
         return
 

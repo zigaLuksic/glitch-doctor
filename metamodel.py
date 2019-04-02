@@ -25,7 +25,7 @@ class Metamodel():
         self.step_index = 0
         self.model_evaluations = 0
 
-        self.model = Model(self, model_kwargs)
+        self.model = Model(model_kwargs)
         self.surrogate = Surrogate(self, surrogate_kwargs)
         self.relevator = Relevator(self, relevator_kwargs)
         self.history = History(self, history_kwargs)

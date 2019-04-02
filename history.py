@@ -25,8 +25,8 @@ class History():
     def __init__(self, metamodel, kwargs):
         self.metamodel = metamodel
 
-        self.size = kwargs.get("size", 1000)
-        self.use_size = kwargs.get("use_size", 100)
+        self.size = kwargs.get("size", 500)
+        self.use_size = kwargs.get("use_size", 200)
 
         self._dimension = metamodel.model.get_dimension() + 1
         # Objects for keeping data

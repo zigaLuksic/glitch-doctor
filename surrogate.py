@@ -16,7 +16,8 @@ class Surrogate():
         self.metamodel = metamodel
         self.rebuild_interval = kwargs.get("rebuild_interval", 100)
 
-        self._predictor = ensemble.RandomForestRegressor()
+        self._predictor = kwargs.get("predictor",
+                                     ensemble.RandomForestRegressor())
         self._built = False
         # Used to keep track of when to rebuild the surrogate.
         self._last_rebuild = 0
