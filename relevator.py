@@ -14,6 +14,7 @@ class Relevator():
     def __init__(self, metamodel, kwargs):
         self.metamodel = metamodel
         self.rebuild_interval = kwargs.get("rebuild_interval", 100)
+        self.fresh_info = kwargs.get("fresh_info", None)
 
         self._predictor = kwargs.get("predictor",
                                      ensemble.RandomForestRegressor())
@@ -88,7 +89,10 @@ class Relevator():
         self._update()
         data = self._prepare_data(coords)
 
-        if self._built:
+        if self.fresh_info and self.metamodel.step_index % self.fresh_info == 0:
+            # If [fresh_info] is selected, we sometimes force the true model.
+            prediction = 1
+        elif self._built:
             prediction = self._predictor.predict(data)
         else:
             prediction = 1
