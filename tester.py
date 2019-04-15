@@ -36,7 +36,7 @@ history_kwargs = {"size": 500,
 # Example setup for optimisation
 
 # Set up the optimisation algorithm
-seed = 1
+seed = 12
 testfun = repressilator
 d = 4
 bounds = repressilator_bounds
@@ -45,9 +45,9 @@ bounds = repressilator_bounds
 metamodel_kwargs = {"seed": seed}
 model_kwargs = {"dimension": d,
                 "function": testfun}
-surrogate_kwargs = {"predictor": ensemble.RandomForestRegressor(n_estimators=10)}
+surrogate_kwargs = {"predictor": ensemble.RandomForestRegressor(n_estimators=100)}
 relevator_kwargs = {"fresh_info": 10,
-                    "predictor": ensemble.RandomForestRegressor(n_estimators=50)}
+                    "predictor": ensemble.RandomForestRegressor(n_estimators=100)}
 history_kwargs = {"size": 400}
 
 metamodel = Metamodel(metamodel_kwargs, model_kwargs, surrogate_kwargs,
@@ -75,7 +75,7 @@ def history_mm(x):
 start = time.perf_counter()
 
 np.random.seed(seed)
-result = differential_evolution(history_fun, bounds, maxiter=200, tol=0.000001)
+result = differential_evolution(history_fun, bounds, maxiter=100, tol=0.000001)
 
 print("Time spent is {:.3f} s".format(time.perf_counter() - start))
 print(result.x, result.fun)
@@ -85,7 +85,7 @@ print("True model evaluations: {}".format(len(pure_history)))
 start = time.perf_counter()
 
 np.random.seed(seed)
-result = differential_evolution(history_mm, bounds, maxiter=200, tol=0.000001)
+result = differential_evolution(history_mm, bounds, maxiter=300, tol=0.000001)
 
 print("Time spent is {:.3f} s".format(time.perf_counter() - start))
 print(result.x, result.fun)
@@ -104,5 +104,30 @@ ax1 = fig.add_subplot(111)
 
 ax1.scatter(mod_x, mod_y, s=2, c='b', marker=".", label='model')
 ax1.scatter(surr_x, surr_y, s=2, c='r', marker=".", label='surrogate')
+plt.legend(loc='upper left')
+plt.show()
+
+# Compare best result of function and meta model
+# (number of TRUE MODEL (objective function) evaluations)
+fig = plt.figure()
+ax1 = fig.add_subplot(111)
+
+min_mod = [min(pure_history[:i])[0] for i in range(1, len(pure_history))]
+min_mm = [min(mod_y[:i]) for i in range(1, len(mod_y))]
+
+ax1.scatter(range(len(min_mod)), min_mod, s=2, c='b', marker=".", label='model')
+ax1.scatter(range(len(min_mm)), min_mm, s=2, c='r', marker=".", label='MM')
+plt.legend(loc='upper left')
+plt.show()
+
+# Do the comparison on logarithmic scale
+fig = plt.figure()
+ax1 = fig.add_subplot(111)
+
+log_min_mod = [np.log(x) for x in min_mod]
+log_min_mm = [np.log(x) for x in min_mm]
+
+ax1.scatter(range(len(log_min_mod)), log_min_mod, s=2, c='b', marker=".", label='model')
+ax1.scatter(range(len(log_min_mm)), log_min_mm, s=2, c='r', marker=".", label='MM')
 plt.legend(loc='upper left')
 plt.show()
